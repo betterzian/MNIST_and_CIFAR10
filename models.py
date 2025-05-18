@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class LogisticRegression(nn.Module):
+    #逻辑回归模型
     def __init__(self):
         super().__init__()
         self.linear = nn.Linear(784, 10)
@@ -11,6 +12,7 @@ class LogisticRegression(nn.Module):
 
 
 class BasicBlock(nn.Module):
+    #基本块
     expansion = 1
 
     def __init__(self, in_planes, planes, stride=1):
@@ -36,6 +38,7 @@ class BasicBlock(nn.Module):
 
 
 class ResNet(nn.Module):
+    #ResNet模型
     def __init__(self, block, num_blocks, num_classes=10):
         super(ResNet, self).__init__()
         self.in_planes = 64
