@@ -1,6 +1,6 @@
 from argparse import Namespace
 from dataset import CIFAR10Dataset
-from models import ResNet18
+from models import DLA,ResNet18
 from server import run_server
 from setup import cleanup
 from worker import run_worker
@@ -9,7 +9,7 @@ import torch.multiprocessing as mp
 def run(rank,args):
     model = ResNet18()
     if rank == 0:
-        run_server(rank=rank, model=model, dataset=args.dataset,world_size=args.world_size)
+        run_server(rank=rank, model=model, path='CIFAR10', dataset=args.dataset, world_size=args.world_size)
     else:
         run_worker(rank=rank, model=model, dataset=args.dataset,world_size=args.world_size)
     cleanup()

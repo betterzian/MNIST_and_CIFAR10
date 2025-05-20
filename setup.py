@@ -18,15 +18,18 @@ def cleanup():
     dist.destroy_process_group()
 
 
-def test(model, test_loader):
+def test(model, test_loader,writer,epoch,device):
     correct = 0
     total = 0
     with torch.no_grad():
         for X, Y in test_loader:
+            X,Y = X.to(device), Y.to(device)
             pred = torch.argmax(model(X), dim=1)
             correct += (pred == Y).sum().item()
             total += Y.size(0)
     print(f"Test Accuracy: {correct/total:.4f}")
+    writer.add_scalar('Test Accuracy', correct/total, epoch)
+    return correct/total
 
 
 def uniform_init(model:nn.Module):

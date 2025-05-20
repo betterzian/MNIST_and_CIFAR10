@@ -9,7 +9,7 @@ import torch.multiprocessing as mp
 def run(rank,args):
     model = LogisticRegression()
     if rank == 0:
-        run_server(rank=rank, model=model, dataset=args.dataset,world_size=args.world_size)
+        run_server(rank=rank, model=model, path='MNIST', dataset=args.dataset,world_size=args.world_size)
     else:
         run_worker(rank=rank, model=model, dataset=args.dataset,world_size=args.world_size)
     cleanup()

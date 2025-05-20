@@ -20,10 +20,11 @@ def run_worker(rank,model:nn.Module,dataset,world_size=2,backend='gloo',init_met
     torch.manual_seed(0)  # 固定随机种子
     device = torch.device(f'cuda:{rank-1}' if torch.cuda.is_available() else 'cpu')
     # 加载训练集
-    sampler = torch.utils.data.distributed.DistributedSampler(
-        dataset, num_replicas=world_size-1, rank=rank-1)
-    train_loader = DataLoader(dataset, batch_size=128, sampler=sampler)
-
+    sampler = torch.utils.data.distributed.DistributedSampler(dataset, num_replicas=world_size-1, rank=rank-1)
+    train_loader = DataLoader(dataset, batch_size=256, sampler=sampler)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=5e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=1000)
+    model.to(device)
     epoch = 0
     while True:
         sampler.set_epoch(epoch)
@@ -35,6 +36,7 @@ def run_worker(rank,model:nn.Module,dataset,world_size=2,backend='gloo',init_met
                 return
             else:
                 model.load_state_dict(new_state[0])
+            optimizer.zero_grad()
 
             # 计算本地梯度
             gradients = compute_gradients(model, X, Y,device)
@@ -42,8 +44,3 @@ def run_worker(rank,model:nn.Module,dataset,world_size=2,backend='gloo',init_met
             # 发送梯度给Server（确保张量在CPU）
             dist.send_object_list([gradients], dst=0)
 
-
-
-if __name__ == "__main__":
-    rank = 1
-    run_worker(rank)
