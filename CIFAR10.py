@@ -1,43 +1,25 @@
-import torch
-import torch.multiprocessing as mp
-import torch.nn as nn
-import torch.optim as optim
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils.data import DataLoader
-from setup import setup, cleanup
+from argparse import Namespace
 from dataset import CIFAR10Dataset
 from models import ResNet18
+from server import run_server
+from setup import cleanup
+from worker import run_worker
+import torch.multiprocessing as mp
 
-
-def train(rank, world_size):
-    setup(rank, world_size)
-    # 数据加载
-    dataset = CIFAR10Dataset()
-    sampler = torch.utils.data.distributed.DistributedSampler(
-        dataset, num_replicas=world_size, rank=rank)
-    dataloader = DataLoader(dataset, batch_size=64, sampler=sampler)
-
-    # 模型定义
-    model = ResNet18().to(rank)
-    ddp_model = DDP(model, device_ids=[rank])
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(ddp_model.parameters(), lr=0.001, momentum=0.9)
-
-    # 训练循环
-    for epoch in range(10):
-        sampler.set_epoch(epoch)
-        for inputs, labels in dataloader:
-            inputs, labels = inputs.to(rank), labels.to(rank)
-            optimizer.zero_grad()
-            outputs = ddp_model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-        if rank == 0:
-            print(f'Epoch {epoch}, Loss: {loss.item()}')
-
+def run(rank,args):
+    model = ResNet18()
+    if rank == 0:
+        run_server(rank=rank, model=model, dataset=args.dataset,world_size=args.world_size)
+    else:
+        run_worker(rank=rank, model=model, dataset=args.dataset,world_size=args.world_size)
     cleanup()
 
 if __name__ == "__main__":
-    world_size = 1
-    mp.spawn(train, args=(world_size,), nprocs=world_size, join=True)
+    import sys
+    #world_size = int(sys.argv[1])  # 通过命令行参数指定workers数量
+    world_size = 2
+    train_dataset = CIFAR10Dataset(train=True)
+    test_dataset = CIFAR10Dataset(train=False)
+    server_args = Namespace( dataset=test_dataset,world_size=world_size)
+    worker_args = Namespace( dataset=train_dataset,world_size=world_size)
+    mp.spawn(run,args=(server_args,),nprocs=world_size,join=True)
