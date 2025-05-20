@@ -27,6 +27,7 @@ def test(model, test_loader):
             correct += (pred == Y).sum().item()
             total += Y.size(0)
     print(f"Test Accuracy: {correct/total:.4f}")
+    return correct/total
 
 
 def uniform_init(model:nn.Module):

@@ -22,7 +22,7 @@ def run_worker(rank,model:nn.Module,dataset,world_size=2,backend='gloo',init_met
     # 加载训练集
     sampler = torch.utils.data.distributed.DistributedSampler(
         dataset, num_replicas=world_size-1, rank=rank-1)
-    train_loader = DataLoader(dataset, batch_size=128, sampler=sampler)
+    train_loader = DataLoader(dataset, batch_size=512, sampler=sampler)
 
     epoch = 0
     while True:
